@@ -236,7 +236,7 @@ def train_model_moon(model, old_models, glb_model, trn_x, trn_y, tst_x, tst_y, m
 
     return model
 
-def train_global_model_feddk(s_model, g_model, t_model, client_params,
+def train_global_model_feddf(s_model, g_model, t_model, client_params,
                                       clnt_cls_num, glb_lr, gen_lr,
                                       batch_size, print_per, weight_decay,
                                       dataset_name, trn_x, trn_y, tst_x, tst_y):

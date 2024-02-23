@@ -179,7 +179,7 @@ def train_FedDF(data_obj, act_prob, learning_rate, batch_size, epoch,
             trn_x_sel = np.concatenate(clnt_x[selected_clnts], axis=0)
             trn_y_sel = np.concatenate(clnt_y[selected_clnts], axis=0)
             avg_model_ft.load_state_dict(copy.deepcopy(dict(avg_model.state_dict())))
-            avg_model_ft, init_g_model = train_global_model_feddk(avg_model_ft, init_g_model, model_func(), clnt_params_list[selected_clnts], #weight_list[selected_clnts],
+            avg_model_ft, init_g_model = train_global_model_feddf(avg_model_ft, init_g_model, model_func(), clnt_params_list[selected_clnts], #weight_list[selected_clnts],
                                               clnt_cls_num[selected_clnts], glb_model_lr * (lr_decay_per_round ** i), gen_model_lr * (lr_decay_per_round ** i),
                                               batch_size, print_per, weight_decay, data_obj.dataset,
                                               trn_x_sel, trn_y_sel, data_obj.tst_x, data_obj.tst_y)
