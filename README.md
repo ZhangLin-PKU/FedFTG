@@ -14,12 +14,11 @@ This project includes the implementation of the FL method FedFTG, and the implem
 
 ## Data Preparation
 
-<p hidden>
-The types of dataset segmentation in this project are IID and Non-IID.
-### IID (identifically and independently distributed)
-+ It merely uniformly split the dataset into N clients at random. The local dataset located in different clients have the same data distribution. 
-### Non-IID (non-identifically and independently distributed)
-+ The dataset is segmented with its natrual property. A popular way for realizing non-iid dataset segmentation is utilizing Dirichlet distribution, which is adopted in this project. It uses Dirichlet distribution on the label ratios to ensure uneven label distributions among clients for Non-IID splits. </p>
+<!-- The types of dataset segmentation in this project are IID and Non-IID. -->
+<!-- ### IID (identifically and independently distributed): -->
+<!-- + It merely uniformly split the dataset into N clients at random. The local dataset located in different clients have the same data distribution.  -->
+<!-- ### Non-IID (non-identifically and independently distributed) -->
+<!-- + The dataset is segmented with its natrual property. A popular way for realizing non-iid dataset segmentation is utilizing Dirichlet distribution, which is adopted in this project. It uses Dirichlet distribution on the label ratios to ensure uneven label distributions among clients for Non-IID splits. -->
 
 ### Download dataset
 
