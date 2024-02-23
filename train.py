@@ -6,6 +6,7 @@ import numpy as np
 from models import model_choose_fn
 from methods import FedAvg, FedProx, SCAFFOLD, MOON, FedDyn
 from methods import FedFTG, FedProxGAN, SCAFFOLDGAN, MOONGAN, FedDynGAN
+from methods import FedDF
 import matplotlib.pyplot as plt
 
 
@@ -129,8 +130,19 @@ def run(conf):
                                          data_path=conf['savepath'], rand_seed=conf['seed'], mu=conf['mu'], tau=conf['tau'],
                                          lr_decay_per_round=conf['lr_decay'])
         res_all_performance = moon_res[-1]
-
-
+    elif conf['method'] == 'FedDF':
+        print('Train with FedDF+++++++++++++++++++++++++++++++')
+        g_model_func = lambda: model_choose_fn.choose_g_model(g_model_arch, nz=nz, nc=data_obj.channels,
+                                                              img_size=data_obj.width, n_cls=out_channel)
+        init_g_model = g_model_func()
+        feddk_res = FedDF.train_FedDF(data_obj=data_obj, act_prob=conf['active_frac'], learning_rate=conf['lr'],
+                                         batch_size=conf['bs'], epoch=conf['localE'], com_amount=conf['comm_amount'],
+                                         print_per=conf['print_freq'], weight_decay=conf['weight_decay'], model_func=model_func,
+                                         init_model=init_model, init_g_model=init_g_model, sch_step=conf['sch_step'], sch_gamma=conf['sch_gamma'],
+                                         save_period=conf['save_period'], suffix=config['model_arch'] + g_model_arch, trial=False,
+                                         data_path=conf['savepath'], rand_seed=conf['seed'],
+                                         lr_decay_per_round=conf['lr_decay'])
+        res_all_performance = feddk_res[-1]
     elif conf['method'] == 'FedFTG':
         print('Train with FedFTG+++++++++++++++++++++++++++++++')
         g_model_func = lambda: model_choose_fn.choose_g_model(g_model_arch, nz=nz, nc=data_obj.channels,
