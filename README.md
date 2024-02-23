@@ -44,7 +44,7 @@ Note that `mode=0` indicates IID segmentation, and `mode=1` indicates Non-IID se
 
 Quick launch the experiment by running the script:
 ```
-bash CIFAR10_FedDyn.sh
+bash CIFAR10_FedFTG.sh
 ```
 
 Change the parameters to run experiments for different datasets, data distributions, etc.
@@ -55,7 +55,7 @@ Change the parameters to run experiments for different datasets, data distributi
 
 
 >+ **seed**: seed for reproducibility, default is 1024
->+ **method**: traning method, choices in {'FedAvg', 'FedProx', 'FedDyn', 'SCAFFOLD', 'FedNova'}, default is 'FedDyn'
+>+ **method**: traning method, choices in {'FedAvg', 'FedProx', 'FedDyn', 'SCAFFOLD', 'MOON', 'FedFTG', 'FedProxGAN', 'FedDynGAN', 'SCAFFOLDGAN', 'MOONGAN'}, default is 'FedDyn'
 >+ **dataset**: training dataset, choices in {'CIFAR10', 'CIFAR100'}, default is 'CIFAR10'
 >+ **exp_name**: experiment name, input whatever you want, default is 'Federated'
 >+ **save**: bool value for saving the training results or not, default is False
