@@ -236,6 +236,110 @@ def train_model_moon(model, old_models, glb_model, trn_x, trn_y, tst_x, tst_y, m
 
     return model
 
+def train_global_model_feddk(s_model, g_model, t_model, client_params,
+                                      clnt_cls_num, glb_lr, gen_lr,
+                                      batch_size, print_per, weight_decay,
+                                      dataset_name, trn_x, trn_y, tst_x, tst_y):
+    t_model.eval()
+    s_model.to(device)
+    t_model.to(device)
+    g_model.to(device)
+    num_clients, num_classes = clnt_cls_num.shape
+    optimizer_D = torch.optim.SGD(s_model.parameters(), lr=glb_lr, weight_decay=weight_decay)
+    optimizer_G = torch.optim.Adam(
+        params=g_model.parameters(),
+        lr=gen_lr, betas=(0.9, 0.999),
+        eps=1e-08, weight_decay=weight_decay, amsgrad=False)
+    ensemble_alpha = 1
+    ensemble_eta = 1
+    diversity_criterion = DiversityLoss(metric='l1').cuda()
+    cls_criterion = nn.CrossEntropyLoss(reduction='mean').cuda()
+    kl_criterion = torch.nn.KLDivLoss(reduction='batchmean').cuda()
+    iterations_g = 50
+    iterations_d = 20
+    nz = 100 if dataset_name == 'CIFAR10' or dataset_name == 'mnist' else 256
+    cls_num = np.sum(clnt_cls_num, axis=0)
+
+    for params in g_model.parameters():
+        params.requires_grad = True
+    s_model.eval()
+    g_model.train()
+
+    labels_all = generate_labels(iterations_g * batch_size, cls_num)
+
+    for e in range(iterations_g):
+        labels = labels_all[e*batch_size:(e*batch_size+batch_size)]
+        onehot = np.zeros((batch_size, num_classes))
+        onehot[np.arange(batch_size), labels] = 1
+        y_onehot = torch.Tensor(onehot).cuda()
+        y = torch.Tensor(labels).long().cuda()
+        z = torch.randn((batch_size, nz, 1, 1)).cuda()
+
+        ############## train generator ##############
+        optimizer_G.zero_grad()
+        fake = g_model(z, y_onehot)
+        diversity_loss = ensemble_eta * diversity_criterion(z.view(z.shape[0],-1), fake)
+        diversity_loss.backward()
+        teacher_loss = 0
+        for client in range(num_clients):
+            t_model = set_client_from_params(t_model, client_params[client])
+            fake = g_model(z, y_onehot)
+            t_logit = t_model(fake)
+            loss_cls = ensemble_alpha * cls_criterion(t_logit, y) / num_clients
+            loss_cls.backward()
+            teacher_loss += loss_cls
+        loss = diversity_loss + teacher_loss
+        optimizer_G.step()
+
+        if (e + 1) % print_per == 0:
+            print("Epoch %3d, Loss: %.4f, Diversity Loss: %.4f, Classification Loss: %.4f"
+                  % (e + 1, loss.item(), diversity_loss.item(), teacher_loss.item()))
+
+    # Freeze model
+    for params in g_model.parameters():
+        params.requires_grad = False
+
+    for params in s_model.parameters():
+        params.requires_grad = True
+    g_model.eval()
+    s_model.train()
+
+    labels_all = generate_labels(iterations_d * batch_size, cls_num)
+
+    for e in range(iterations_d):
+
+        labels = labels_all[e*batch_size:(e*batch_size+batch_size)]
+        onehot = np.zeros((batch_size, num_classes))
+        onehot[np.arange(batch_size), labels] = 1
+        y_onehot = torch.Tensor(onehot).cuda()
+        z = torch.randn((batch_size, nz, 1, 1)).cuda()
+
+        optimizer_D.zero_grad()
+        fake = g_model(z, y_onehot).detach()
+        s_logit = s_model(fake)
+        t_logit_merge = 0
+        for client in range(num_clients):
+            t_model = set_client_from_params(t_model, client_params[client])
+            t_logit = t_model(fake).detach()
+            t_logit_merge += F.softmax(t_logit, dim=1)
+        loss_D = kl_criterion(F.log_softmax(s_logit, dim=1), t_logit_merge/num_clients)
+        loss_D.backward()
+        optimizer_D.step()
+
+        if (e + 1) % print_per == 0:
+            loss_trn, acc_trn = get_acc_loss(trn_x, trn_y, s_model, dataset_name)
+            loss_tst, acc_tst = get_acc_loss(tst_x, tst_y, s_model, dataset_name)
+            print("Epoch %3d, Training Accuracy: %.4f, Loss: %.4f, Test Accuracy: %.4f, Loss: %.4f, LR: %.4f, Loss D: %.4f"
+                  % (e + 1, acc_trn, loss_trn, acc_tst, loss_tst, optimizer_D.param_groups[0]['lr'], loss_D.item()))
+            s_model.train()
+
+    # Freeze model
+    for params in s_model.parameters():
+        params.requires_grad = False
+    s_model.eval()
+
+    return s_model, g_model
+
 def train_global_model_cgan_bs_weight_iloop_fz_dis(s_model, g_model, t_model, client_params,
                                       clnt_cls_num, glb_lr, gen_lr,
                                       batch_size, print_per, weight_decay,
